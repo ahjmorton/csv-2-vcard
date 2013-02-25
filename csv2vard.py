@@ -108,7 +108,7 @@ def looks_like(field_name, test) :
 
 _is_home = lambda x : x.startswith("020")
 
-_MOBILE_REGEX = re.compile("(44|0)7[4-9]")
+_MOBILE_REGEX = re.compile("(\+?44|0)7[4-9]")
 
 def _is_mobile(number) :
     return _MOBILE_REGEX.match(number) is not None
@@ -149,6 +149,15 @@ def filter_empty(adict) :
             new_dict[key] = adict[key]
     return new_dict
 
+def _is_valid(lines) :
+    return (
+len(lines) >= 4 and 
+lines[0] == _CARD_HEADER and
+lines[1] == _CARD_VERSION and
+any(map(lambda x : x.startswith("N:"), lines)) and
+lines[len(lines) - 1] == _CARD_FOOTER
+)
+
 def build_vcard(field_mapping) :
     card_lines = []
     card_lines.append(_CARD_HEADER)
@@ -157,7 +166,10 @@ def build_vcard(field_mapping) :
         if handler.can_handle(field_mapping) :
             card_lines.append(handler.handle(field_mapping))
     card_lines.append(_CARD_FOOTER)
-    return _CARD_LINE_BREAK.join(card_lines) + _CARD_LINE_BREAK
+    if _is_valid(card_lines) :
+        return _CARD_LINE_BREAK.join(card_lines) + _CARD_LINE_BREAK
+    else :
+        return ""
 
 def main(file_loc, output=None) :
     output = file_loc + ".vcf" if output is None else output
